@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
-	"cloud/atomic"
+	"cloud-base/atomic"
 	glog "github.com/golang/glog"
 	"net/http"
 	"html/template"
