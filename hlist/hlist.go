@@ -16,6 +16,8 @@
 
 package hlist
 
+import "fmt"
+
 // Head is an head of a linked hlist.
 type Head struct {
 	first *Element
@@ -88,4 +90,20 @@ func (l *Hlist) Remove(e *Element) interface{} {
 	e.next = nil  // avoid memory leak
 	e.pprev = nil // avoid memory leak
 	return e.Value
+}
+
+// String print all elements into string.
+func (l *Hlist) String() string {
+	e := l.Front()
+	var s string
+	if e == nil {
+		s = fmt.Sprintf("[len: %d, value: nil", l.len)
+	} else {
+		s = fmt.Sprintf("[len: %d, value: %v", l.len, e.Value)
+		e = e.Next()
+	}
+	for ; e != nil; e = e.Next() {
+		s = fmt.Sprintf("%s, %v", s, e.Value)
+	}
+	return s + "]"
 }
