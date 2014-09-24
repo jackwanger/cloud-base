@@ -42,7 +42,7 @@ func NewSentinels(addrs []string, poolSize int, names ...string) (*Sentinels, er
 		addrs:		addrs,
 		curIndex:	-1,
 		names:		names,
-		errCh:		make(chan struct{}),
+		errCh:		make(chan struct{}, 1),
 		getCh:		make(chan chan *sentinel.Client, 128),
 		putCh:		make(chan putChan, 128),
 		downCh:		make(chan struct{}),
@@ -99,6 +99,10 @@ func (s *Sentinels) handler() {
 			return
 
 		case <-s.errCh:
+			if s.curClient == nil {
+				break
+			}
+
 			s.curClient.Close()
 			s.curClient = nil
 
@@ -108,6 +112,9 @@ func (s *Sentinels) handler() {
 			}
 
 		case getter := <-s.getCh:
+			if s.curClient == nil {
+				s.errCh <- struct{}{}
+			}
 			select {
 			case getter <- s.curClient:
 			default:
@@ -166,11 +173,28 @@ func (s *Sentinels) getSentinel(timeout time.Duration) (*sentinel.Client) {
 }
 
 func (s *Sentinels) GetMasterTimeout(name string, timeout time.Duration) (*redis.Client, error) {
+	con, err := s.getMasterTimeout(name, timeout)
+	if err != nil {
+		if senErr, ok := err.(*sentinel.ClientError); ok && senErr.SentinelErr {
+			time.Sleep(time.Second)
+			con, err = s.getMasterTimeout(name, timeout)
+		}
+	}
+	return con, err
+}
+
+func (s *Sentinels) getMasterTimeout(name string, timeout time.Duration) (*redis.Client, error) {
 	client := s.getSentinel(timeout)
 	if client == nil {
 		return nil, ErrNoSentinel
 	}
-	return client.GetMaster(name)
+	con, err := client.GetMaster(name)
+	if err != nil {
+		if senErr, ok := err.(*sentinel.ClientError); ok && senErr.SentinelErr {
+			s.errCh <- struct{}{}
+		}
+	}
+	return con, err
 }
 
 func (s *Sentinels) PutMaster(name string, client *redis.Client) {
