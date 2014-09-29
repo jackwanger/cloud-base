@@ -45,7 +45,7 @@ func NewSentinels(addrs []string, poolSize int, names ...string) (*Sentinels, er
 		errCh:		make(chan struct{}, 1),
 		getCh:		make(chan chan *sentinel.Client, 128),
 		putCh:		make(chan putChan, 128),
-		downCh:		make(chan struct{}),
+		downCh:		make(chan struct{}, 1),
 		newCh:		make(chan *sentinel.Client),
 		quitCh:		make(chan struct{}),
 	}
@@ -118,7 +118,6 @@ func (s *Sentinels) handler() {
 			select {
 			case getter <- s.curClient:
 			default:
-				break
 			}
 
 		case putter := <-s.putCh:
@@ -152,7 +151,7 @@ func (s *Sentinels) GetMaster(name string) (*redis.Client, error) {
 }
 
 func (s *Sentinels) getSentinel(timeout time.Duration) (*sentinel.Client) {
-	ch := make(chan *sentinel.Client)
+	ch := make(chan *sentinel.Client, 1)
 	var client *sentinel.Client
 	if timeout > 0 {
 		select {
