@@ -10,28 +10,28 @@ import (
 
 var (
 	ErrNoSentinel = errors.New("all sentinels were not avaliable")
-	ErrEmptyName = errors.New("names of redis cannot be empty")
+	ErrEmptyName  = errors.New("names of redis cannot be empty")
 )
 
 type putChan struct {
-	name	string
-	client	*redis.Client
+	name   string
+	client *redis.Client
 }
 
 type Sentinels struct {
-	addrs		[]string
-	curIndex	int
-	curClient	*sentinel.Client
-	names		[]string
-	poolSize	int
+	addrs     []string
+	curIndex  int
+	curClient *sentinel.Client
+	names     []string
+	poolSize  int
 
-	errCh		chan struct{}
-	getCh		chan chan *sentinel.Client
-	putCh		chan putChan
-	downCh		chan struct{}
-	newCh		chan *sentinel.Client
+	errCh  chan struct{}
+	getCh  chan chan *sentinel.Client
+	putCh  chan putChan
+	downCh chan struct{}
+	newCh  chan *sentinel.Client
 
-	quitCh		chan struct{}
+	quitCh chan struct{}
 }
 
 func NewSentinels(addrs []string, poolSize int, names ...string) (*Sentinels, error) {
@@ -39,15 +39,16 @@ func NewSentinels(addrs []string, poolSize int, names ...string) (*Sentinels, er
 		return nil, ErrEmptyName
 	}
 	s := &Sentinels{
-		addrs:		addrs,
-		curIndex:	-1,
-		names:		names,
-		errCh:		make(chan struct{}, 1),
-		getCh:		make(chan chan *sentinel.Client, 128),
-		putCh:		make(chan putChan, 128),
-		downCh:		make(chan struct{}, 1),
-		newCh:		make(chan *sentinel.Client),
-		quitCh:		make(chan struct{}),
+		addrs:    addrs,
+		curIndex: -1,
+		names:    names,
+		errCh:    make(chan struct{}, 1),
+		getCh:    make(chan chan *sentinel.Client, 128),
+		putCh:    make(chan putChan, 128),
+		downCh:   make(chan struct{}, 1),
+		newCh:    make(chan *sentinel.Client),
+		quitCh:   make(chan struct{}),
+		poolSize: poolSize,
 	}
 	go s.maker()
 	go s.handler()
@@ -77,7 +78,7 @@ func (s *Sentinels) dial(aroundLoop bool) {
 			}
 			break
 		}
-		if (len(s.addrs) - 1) == s.curIndex && !aroundLoop {
+		if (len(s.addrs)-1) == s.curIndex && !aroundLoop {
 			break
 		}
 		time.Sleep(time.Second)
@@ -150,7 +151,7 @@ func (s *Sentinels) GetMaster(name string) (*redis.Client, error) {
 	return s.GetMasterTimeout(name, 0)
 }
 
-func (s *Sentinels) getSentinel(timeout time.Duration) (*sentinel.Client) {
+func (s *Sentinels) getSentinel(timeout time.Duration) *sentinel.Client {
 	ch := make(chan *sentinel.Client, 1)
 	var client *sentinel.Client
 	if timeout > 0 {
@@ -211,4 +212,3 @@ func (s *Sentinels) PutMasterTimeout(name string, client *redis.Client, timeout 
 		s.putCh <- putter
 	}
 }
-
