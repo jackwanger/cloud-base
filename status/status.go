@@ -2,12 +2,12 @@ package status
 
 import (
 	"bytes"
+	"cloud-base/atomic"
 	"encoding/json"
 	"flag"
-	"cloud-base/atomic"
 	glog "github.com/golang/glog"
-	"net/http"
 	"html/template"
+	"net/http"
 	"os"
 	"os/user"
 	"runtime"
@@ -16,10 +16,10 @@ import (
 )
 
 var (
-	startTime	int64 // process start unixnano
+	startTime int64 // process start unixnano
 
-	AppStat		*appStat
-	running		atomic.AtomicBoolean
+	AppStat *appStat
+	running atomic.AtomicBoolean
 
 	//MsgStat = &MessageStat{}	// message
 	//ConnStat = &ConnectionStat{}// connection
