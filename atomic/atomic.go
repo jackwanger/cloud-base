@@ -48,6 +48,28 @@ func (this *AtomicUint64) CompareAndSwap(old, newv uint64) bool {
 	return atomic.CompareAndSwapUint64((*uint64)(this), old, newv)
 }
 
+type AtomicInt32 int32
+
+func (this *AtomicInt32) Inc() int32 {
+	return atomic.AddInt32((*int32)(this), 1)
+}
+
+func (this *AtomicInt32) Dec() int32 {
+	return atomic.AddInt32((*int32)(this), -1)
+}
+
+func (this *AtomicInt32) Set(val int32) int32 {
+	return atomic.SwapInt32((*int32)(this), val)
+}
+
+func (this *AtomicInt32) Get() int32 {
+	return atomic.LoadInt32((*int32)(this))
+}
+
+func (this *AtomicInt32) CompareAndSwap(old, newv int32) bool {
+	return atomic.CompareAndSwapInt32((*int32)(this), old, newv)
+}
+
 type AtomicBoolean int32
 
 func (this *AtomicBoolean) Set(val bool) bool {
