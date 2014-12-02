@@ -2,17 +2,19 @@ package status
 
 import (
 	"bytes"
-	"cloud-base/atomic"
 	"encoding/json"
 	"flag"
-	glog "github.com/golang/glog"
 	"html/template"
 	"net/http"
 	"os"
 	"os/user"
 	"runtime"
 	"runtime/pprof"
+	"strings"
 	"time"
+
+	"cloud-base/atomic"
+	"github.com/golang/glog"
 )
 
 var (
@@ -170,11 +172,18 @@ func serverStats() []byte {
 }
 
 // configuration info
-func configInfo() []byte {
+func configInfo(form bool) []byte {
 	res := map[string]interface{}{}
 	flag.VisitAll(func(f *flag.Flag) {
 		res[f.Name] = f.Value
 	})
+	if form {
+		buf := new(bytes.Buffer)
+		if err := configFormTemp.Execute(buf, res); err != nil {
+			glog.Errorf("[stat] generate config form error: %v", err)
+		}
+		return buf.Bytes()
+	}
 	return jsonRes(res)
 }
 
@@ -190,10 +199,10 @@ func jsonRes(res map[string]interface{}) []byte {
 
 // statHandle get stat info by http
 func statHandle(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "GET" {
-		http.Error(w, "Method Not Allowed", 405)
-		return
-	}
+	//if r.Method != "GET" {
+	//	http.Error(w, "Method Not Allowed", 405)
+	//	return
+	//}
 	params := r.URL.Query()
 	types := params.Get("type")
 	auto := params.Get("refresh")
@@ -210,6 +219,7 @@ func statHandle(w http.ResponseWriter, r *http.Request) {
 			<li><a href="/stat?type=golang">golang</a></li>
 			<li><a href="/stat?type=goroutines">goroutines</a></li>
 			<li><a href="/stat?type=config">config</a></li>
+			<li><a href="/stat?type=config&form=true">config(form)</a></li>
 			<li><a href="/stat?type=app">online</a></li>
 			<li><a href="/stat?type=app&refresh=auto">online(auto refresh)</a></li>
 		</ul>`)
@@ -223,7 +233,21 @@ func statHandle(w http.ResponseWriter, r *http.Request) {
 		htmlRes = false
 		res = goroutineStats()
 	case "config":
-		res = configInfo()
+		form := (params.Get("form") == "true")
+		if form && strings.ToUpper(r.Method) == "POST" {
+			r.ParseForm()
+			for key, values := range r.PostForm {
+				value := ""
+				if len(values) > 0 {
+					value = values[0]
+				}
+				if p := flag.Lookup(key); p != nil && p.Value.String() != value {
+					flag.Set(key, value)
+				}
+			}
+			w.WriteHeader(301)
+		}
+		res = configInfo(form)
 	case "app":
 		res = AppStat.JsonBytes()
 	default:
@@ -243,7 +267,8 @@ func statHandle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-var autoHtml = `
+var (
+	autoHtml = `
 <html>
 <body>
 <pre id='output'>
@@ -255,8 +280,26 @@ setInterval("window.location.reload()", 2000);
 </body>
 </html>
 `
+	autoTemp = template.Must(template.New("autoRefresh").Parse(autoHtml))
 
-var autoTemp = template.Must(template.New("autoRefresh").Parse(autoHtml))
+	configFormHtml = `
+<html>
+<body>
+<form action="/stat?type=config&form=true" method="POST">
+{{ $allConfig := . }}
+{{ range $key, $value := $allConfig }}
+<div>
+<label for="cf-{{$key}}" style="display:block">{{$key}}</label>
+<input id="cf-{{$key}}" name="{{$key}}" type="text" value="{{$value}}">
+</div>
+{{ end }}
+<input type="submit" value="提交">
+</form>
+</body>
+</html>
+`
+	configFormTemp = template.Must(template.New("configForm").Parse(configFormHtml))
+)
 
 //// Connection stat info
 //type ConnectionStat struct {
