@@ -261,7 +261,11 @@ func statHandle(w http.ResponseWriter, r *http.Request) {
 	} else {
 		if res != nil {
 			if _, err := w.Write(res); err != nil {
-				glog.Errorf("w.Write(\"%s\") error(%v)\n", string(res), err)
+				if len(res) > 200 {
+					glog.Errorf("w.Write(\"%s\") error(%v)\n", string(res[:200]), err)
+				} else {
+					glog.Errorf("w.Write(\"%s\") error(%v)\n", string(res), err)
+				}
 			}
 		}
 	}
