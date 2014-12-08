@@ -6,6 +6,7 @@ import (
 
 	"github.com/fzzy/radix/extra/sentinel"
 	"github.com/fzzy/radix/redis"
+	"github.com/golang/glog"
 )
 
 var (
@@ -97,6 +98,7 @@ func (s *Sentinels) handler() {
 			close(s.getCh)
 			close(s.putCh)
 			close(s.newCh)
+			glog.Errorf("[Sentinels] handler quit")
 			return
 
 		case <-s.errCh:
@@ -139,6 +141,7 @@ func (s *Sentinels) maker() {
 		select {
 		case <-s.quitCh:
 			close(s.downCh)
+			glog.Errorf("[Sentinels] maker quit")
 			return
 
 		case <-s.downCh:
