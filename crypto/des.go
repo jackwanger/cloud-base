@@ -24,10 +24,14 @@ func ZeroPadding(ciphertext []byte, blockSize int) []byte {
 	return append(ciphertext, padtext...)
 }
 
-func ZeroUnPadding(origData []byte) []byte {
-	return bytes.TrimFunc(origData,
+func ZeroUnPadding(origData []byte, blockSize int) []byte {
+	return bytes.TrimRightFunc(origData,
 		func(r rune) bool {
-			return r == rune(0)
+			if r == rune(0) && blockSize > 0 {
+				blockSize--
+				return true
+			}
+			return false
 		})
 }
 
@@ -67,7 +71,7 @@ func DesDecrypt(src, key []byte) ([]byte, error) {
 		src = src[bs:]
 		dst = dst[bs:]
 	}
-	out = ZeroUnPadding(out)
+	out = ZeroUnPadding(out, bs)
 	// out = PKCS5UnPadding(out)
 	return out, nil
 }
