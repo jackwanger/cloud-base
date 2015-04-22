@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	stat "github.com/dream0411/goprocinfo/linux"
+	stat "cloud-base/goprocinfo/linux"
 )
 
 // Event when no error happened, Usage is current cpu usage(eg: 0.5).
@@ -48,7 +48,7 @@ func watchCpu(ch chan Event, dur time.Duration) {
 
 		totalDur := total - totalPre
 
-		usage := float64(totalDur - idle + idlePre) / float64(totalDur)
+		usage := float64(totalDur-idle+idlePre) / float64(totalDur)
 		ch <- Event{Usage: usage, Error: nil}
 
 		idlePre = idle
@@ -66,6 +66,6 @@ func getCurCpu() (idle, total uint64, err error) {
 
 	idle = info.Idle
 	total = info.User + info.Nice + info.System + info.Idle + info.IOWait +
-	info.IRQ + info.SoftIRQ + info.Steal + info.Guest + info.GuestNice
+		info.IRQ + info.SoftIRQ + info.Steal + info.Guest + info.GuestNice
 	return
 }
