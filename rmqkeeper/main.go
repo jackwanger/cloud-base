@@ -14,12 +14,13 @@ import (
 	"syscall"
 	"time"
 
-	"cloud-socket/ver"
 	"github.com/golang/glog"
 )
 
 const (
 	kPidFile = ""
+
+	VERSION = "1.0"
 )
 
 var (
@@ -50,7 +51,7 @@ func main() {
 	glog.CopyStandardLogTo("INFO")
 
 	if *printVer {
-		fmt.Printf("Comet %s, 插座后台代理服务器.\n", ver.Version)
+		fmt.Printf("Comet %s, 插座后台代理服务器.\n", VERSION)
 		return
 	}
 
