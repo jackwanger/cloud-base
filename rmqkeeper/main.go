@@ -47,6 +47,8 @@ func main() {
 
 	flag.Parse()
 
+	glog.CopyStandardLogTo("INFO")
+
 	if *printVer {
 		fmt.Printf("Comet %s, 插座后台代理服务器.\n", ver.Version)
 		return
