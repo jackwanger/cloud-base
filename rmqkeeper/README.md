@@ -10,5 +10,5 @@ go build
 查看启动参数说明:
 ./rmqkeeper -help
 
-运行启动命令:
-nohup ./rmqkeeper -h 192.168.2.225:5672 -url http://guest:guest@192.168.2.225:15672 -vh="/" -zks 192.168.2.221 -zkroot Rabbitmq -logtostderr=true -d 1s > rmqkeeper.log 2>&1 &
+修改rmqkeeper.conf中的参数，将-h和-url分别设置为RabbitMQ的服务地址和监控地址；设置-zks为Zookeeper集群的IP列表，最后启动程序:
+./run.sh
